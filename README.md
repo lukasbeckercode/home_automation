@@ -1,0 +1,23 @@
+# Home Automation 
+## Contributors 
+Lukas Becker (MSD20)
+## First Small Description
+Use a RestAPI written in GoLang to turn LEDs on a RaspberryPi 4 on and off. Also, the API should be able to return values
+measured from analog senors (such as temperature sensors)
+
+## Setup instructions
+### Necessary Hardware
+- A raspberry pi (ideally version 4, not tested on other products)
+- All the hardware needed to use the RasPi (SD Card, Power Supply, etc. )
+- Jumper Wires (ideally Female to Male to work with a breadboard)
+- Breadboard 
+- LEDs + Resistors (around 330 Ohms)
+- Some sort of analog Sensor (Potentiometer, Temperature Sensor, etc)
+### Necessary Software
+- Latest Raspbian installation
+### How to install
+ Simply run setup.sh to install Go and its dependencies
+### How to run
+- cd into the root directory of the project (where this file is located)
+- run ```go run main.go```
+
