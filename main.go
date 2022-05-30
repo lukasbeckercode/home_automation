@@ -3,6 +3,8 @@ package main
 import (
 	"errors"
 	"github.com/gin-gonic/gin"
+	"log"
+	"net"
 	"net/http"
 )
 
@@ -21,7 +23,7 @@ type analogPart struct { //represents an analog part
 	Value int `json:"value"`
 }
 
-var binParts = []binPart{ //Array of binary parts
+var binParts = []binPart{ //Array of binary part s
 	//TODO get right pin numbers
 	{part{0, "LED1", 0}, false},
 	{part{1, "LED2", 1}, false},
@@ -113,6 +115,18 @@ func addBinPart(context *gin.Context) {
 
 }
 
+// GetOutboundIP Get preferred outbound ip of this machine
+func GetOutboundIP() net.IP {
+	conn, err := net.Dial("udp", "8.8.8.8:80")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer conn.Close()
+
+	localAddr := conn.LocalAddr().(*net.UDPAddr)
+
+	return localAddr.IP
+}
 func main() {
 	//----------SETUP----------
 	router := gin.Default()
@@ -129,7 +143,10 @@ func main() {
 	router.POST("/addanalogpart", addAnalogPart)
 
 	//----------RUN----------
-	err := router.Run("localhost:9090")
+
+	path := GetOutboundIP().String() + ":9090"
+	//err := router.Run("localhost:9090")
+	err := router.Run(path)
 	if err != nil {
 		return
 	}
