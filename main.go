@@ -3,7 +3,6 @@ package main
 import (
 	"errors"
 	"fmt"
-	adafruitio "github.com/adafruit/io-client-go"
 	"github.com/gin-gonic/gin"
 	"io/ioutil"
 	"log"
@@ -12,8 +11,8 @@ import (
 )
 
 var channelKey string
-var feeds []*adafruitio.Feed
-var client *adafruitio.Client
+var feeds []*Feed
+var client *Client
 
 type part struct {
 	Id   int    `json:"id"`
@@ -30,10 +29,14 @@ type analogPart struct { //represents an analog part
 	Value int `json:"value"`
 }
 
-type remotePart struct {
+type remoteBinPart struct {
 	part
-	On    bool `json:"on"`
-	Value int  `json:"value"`
+	On bool `json:"on"`
+}
+
+type remoteAnalogPart struct {
+	part
+	Value string `json:"value"`
 }
 
 var binParts = []binPart{ //Array of binary part s
@@ -47,8 +50,12 @@ var analogParts = []analogPart{ // Array of analog parts
 	{part{3, "TEMP2", 3}, 0},
 }
 
-var sampleRemotePart = remotePart{
-	part{4, "REM1", 9999}, false, 0,
+var sampleRemoteBinPart = remoteBinPart{
+	part{4, "LED5", 9999}, false,
+}
+
+var sampleRemoteAnalogPart = remoteAnalogPart{
+	part{5, "TEMP5", 9999}, "0",
 }
 
 func getAnalogParts(context *gin.Context) {
@@ -142,21 +149,35 @@ func toggleRemotePart(context *gin.Context) {
 
 	client.SetFeed(feeds[idx])
 
-	sampleRemotePart.On = !sampleRemotePart.On
+	sampleRemoteBinPart.On = !sampleRemoteBinPart.On
 
 	var message string
-	if sampleRemotePart.On {
-		message = "OFF"
+	if sampleRemoteBinPart.On {
+		message = "TRUE"
 	} else {
-		message = "ON"
+		message = "FALSE"
 	}
 
-	_, _, err = client.Data.Send(&adafruitio.Data{Value: message})
+	_, _, err = client.Data.Send(&Data{Value: message})
 	if err != nil {
 		return
 	}
 
-	context.IndentedJSON(http.StatusOK, sampleRemotePart)
+	context.IndentedJSON(http.StatusOK, sampleRemoteBinPart)
+}
+
+func getRemoteAnalogData(context *gin.Context) {
+	name := context.Param("part")
+	idx, err := findMQTTChannel(name)
+
+	if err != nil {
+		context.IndentedJSON(http.StatusNotFound, gin.H{"message": "remote part does not exist"})
+		fmt.Println(err)
+	}
+	client.SetFeed(feeds[idx])
+	data, _, _ := client.Data.Last()
+	sampleRemoteAnalogPart.Value = data.Value
+	context.IndentedJSON(http.StatusOK, sampleRemoteAnalogPart)
 }
 
 // GetOutboundIP Get preferred outbound ip of this machine
@@ -197,7 +218,7 @@ func main() {
 	fmt.Println(channelKey)
 
 	//TODO: add mqtt setup
-	client = adafruitio.NewClient(channelKey)
+	client = NewClient(channelKey)
 	var err error
 	feeds, _, err = client.Feed.All()
 	if err != nil {
@@ -220,7 +241,7 @@ func main() {
 
 	//----------REMOTE PARTS----------
 	router.PATCH("/binparts/remote/:part", toggleRemotePart) // changes the On status of a specific binary part
-	//router.GET("/analogparts/remote:part", )
+	router.GET("/analogparts/remote/:part", getRemoteAnalogData)
 
 	//----------RUN----------
 	path := GetOutboundIP().String() + ":9090"
