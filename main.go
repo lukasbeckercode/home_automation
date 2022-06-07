@@ -8,6 +8,7 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"strings"
 )
 
 var channelKey string
@@ -199,8 +200,8 @@ func getChannelKey(key *string) {
 	if err != nil {
 		panic(err)
 	}
-
-	*key = string(file)
+	tmpKey := string(file)
+	*key = strings.Trim(tmpKey, "\n")
 }
 
 func findMQTTChannel(part string) (int, error) {
