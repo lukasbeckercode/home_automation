@@ -16,9 +16,12 @@ measured from analog senors (such as temperature sensors)
 - An ESP8266 Development Board with the Software from [this]("") repository flashed 
 ### Necessary Software
 - Latest Raspbian installation
+### mqtt Key
+To establish connection with the adafruit.io mqtt server, a key is needed. As this key is private and grants
+access to the entire adafruit.io mqtt services from my account, this is key is not shared in this repo 
 ### How to install
  Simply run setup.sh to install Go and its dependencies
 ### How to run
 - cd into the root directory of the project (where this file is located)
-- run ```go run main.go```
+- run ```./run.sh```
 
