@@ -13,6 +13,7 @@ measured from analog senors (such as temperature sensors)
 - Breadboard 
 - LEDs + Resistors (around 330 Ohms)
 - Some sort of analog Sensor (Potentiometer, Temperature Sensor, etc)
+- An ESP8266 Development Board with the Software from [this]("") repository flashed 
 ### Necessary Software
 - Latest Raspbian installation
 ### How to install

@@ -2,11 +2,18 @@ package main
 
 import (
 	"errors"
+	"fmt"
+	adafruitio "github.com/adafruit/io-client-go"
 	"github.com/gin-gonic/gin"
+	"io/ioutil"
 	"log"
 	"net"
 	"net/http"
 )
+
+var channelKey string
+var feeds []*adafruitio.Feed
+var client *adafruitio.Client
 
 type part struct {
 	Id   int    `json:"id"`
@@ -23,6 +30,12 @@ type analogPart struct { //represents an analog part
 	Value int `json:"value"`
 }
 
+type remotePart struct {
+	part
+	On    bool `json:"on"`
+	Value int  `json:"value"`
+}
+
 var binParts = []binPart{ //Array of binary part s
 	//TODO get right pin numbers
 	{part{0, "LED1", 0}, false},
@@ -32,6 +45,10 @@ var binParts = []binPart{ //Array of binary part s
 var analogParts = []analogPart{ // Array of analog parts
 	{part{2, "TEMP1", 2}, 0},
 	{part{3, "TEMP2", 3}, 0},
+}
+
+var sampleRemotePart = remotePart{
+	part{4, "REM1", 9999}, false, 0,
 }
 
 func getAnalogParts(context *gin.Context) {
@@ -115,6 +132,33 @@ func addBinPart(context *gin.Context) {
 
 }
 
+func toggleRemotePart(context *gin.Context) {
+	name := context.Param("part")
+	idx, err := findMQTTChannel(name)
+	if err != nil {
+		context.IndentedJSON(http.StatusNotFound, gin.H{"message": "remote part does not exist"})
+		fmt.Println(err)
+	}
+
+	client.SetFeed(feeds[idx])
+
+	sampleRemotePart.On = !sampleRemotePart.On
+
+	var message string
+	if sampleRemotePart.On {
+		message = "OFF"
+	} else {
+		message = "ON"
+	}
+
+	_, _, err = client.Data.Send(&adafruitio.Data{Value: message})
+	if err != nil {
+		return
+	}
+
+	context.IndentedJSON(http.StatusOK, sampleRemotePart)
+}
+
 // GetOutboundIP Get preferred outbound ip of this machine
 func GetOutboundIP() net.IP {
 	conn, err := net.Dial("udp", "8.8.8.8:80")
@@ -127,7 +171,39 @@ func GetOutboundIP() net.IP {
 
 	return localAddr.IP
 }
+
+func getChannelKey(key *string) {
+	file, err := ioutil.ReadFile("generated_key.txt")
+
+	if err != nil {
+		panic(err)
+	}
+
+	*key = string(file)
+}
+
+func findMQTTChannel(part string) (int, error) {
+	for index, feed := range feeds {
+		if feed.Name == part {
+			return index, nil
+		}
+	}
+	return 9999, errors.New("cannot find feed")
+}
+
 func main() {
+	getChannelKey(&channelKey)
+
+	fmt.Println(channelKey)
+
+	//TODO: add mqtt setup
+	client = adafruitio.NewClient(channelKey)
+	var err error
+	feeds, _, err = client.Feed.All()
+	if err != nil {
+		panic(err)
+	}
+
 	//----------SETUP----------
 	router := gin.Default()
 
@@ -142,11 +218,14 @@ func main() {
 	router.GET("/analogparts/:part", getAnalogPart)
 	router.POST("/addanalogpart", addAnalogPart)
 
-	//----------RUN----------
+	//----------REMOTE PARTS----------
+	router.PATCH("/binparts/remote/:part", toggleRemotePart) // changes the On status of a specific binary part
+	//router.GET("/analogparts/remote:part", )
 
+	//----------RUN----------
 	path := GetOutboundIP().String() + ":9090"
 	//err := router.Run("localhost:9090")
-	err := router.Run(path)
+	err = router.Run(path)
 	if err != nil {
 		return
 	}
