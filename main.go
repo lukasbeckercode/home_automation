@@ -11,7 +11,6 @@ import (
 	"strings"
 )
 
-var channelKey string
 var feeds []*Feed
 var client *Client
 
@@ -187,7 +186,12 @@ func GetOutboundIP() net.IP {
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer conn.Close()
+	defer func(conn net.Conn) {
+		err := conn.Close()
+		if err != nil {
+
+		}
+	}(conn)
 
 	localAddr := conn.LocalAddr().(*net.UDPAddr)
 
@@ -214,9 +218,8 @@ func findMQTTChannel(part string) (int, error) {
 }
 
 func main() {
+	var channelKey string
 	getChannelKey(&channelKey)
-
-	fmt.Println(channelKey)
 
 	//TODO: add mqtt setup
 	client = NewClient(channelKey)
