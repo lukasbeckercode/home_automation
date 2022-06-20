@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"github.com/stianeikeland/go-rpio"
 	"io/ioutil"
 	"log"
 	"net"
@@ -56,6 +57,12 @@ var sampleRemoteBinPart = remoteBinPart{
 
 var sampleRemoteAnalogPart = remoteAnalogPart{
 	part{5, "TEMP5", 9999}, "0",
+}
+
+func toggleInternalLed(pinNum int) {
+	pin := rpio.Pin(pinNum)
+	pin.Output()
+	pin.Toggle()
 }
 
 func getAnalogParts(context *gin.Context) {
@@ -122,8 +129,8 @@ func toggleOn(context *gin.Context) {
 		context.IndentedJSON(http.StatusNotFound, gin.H{"message": "part not found"})
 		return
 	}
-	//TODO: Set GPIO Pin to HIGH
 	command.On = !command.On
+	toggleInternalLed(command.Pin)
 	context.IndentedJSON(http.StatusOK, command)
 }
 
@@ -231,6 +238,11 @@ func main() {
 
 	//----------SETUP----------
 	router := gin.Default()
+
+	err = rpio.Open()
+	if err != nil {
+		fmt.Println(err)
+	}
 
 	//----------BINARY PARTS----------
 	router.GET("/binparts", getBinParts)      // gets available binary binParts

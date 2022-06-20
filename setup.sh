@@ -10,3 +10,4 @@ fi
 
 echo "install dependency for REST API"
 go get github.com/gin-gonic/gin
+go get github.com/stianeikeland/go-rpio
