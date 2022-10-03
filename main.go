@@ -14,15 +14,15 @@ import (
 
 var client mqtt.Client
 var messagePubHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Message) {
-	fmt.Printf("Received message: %s from topic: %s\n", msg.Payload(), msg.Topic())
+	log.Printf("Received message: %s from topic: %s\n", msg.Payload(), msg.Topic())
 }
 
 var connectHandler mqtt.OnConnectHandler = func(client mqtt.Client) {
-	fmt.Println("Connected")
+	log.Println("Connected")
 }
 
 var connectLostHandler mqtt.ConnectionLostHandler = func(client mqtt.Client, err error) {
-	fmt.Printf("Connect lost: %v", err)
+	log.Printf("Connect lost: %v\n", err)
 }
 var ws *websocket.Conn
 
@@ -202,6 +202,7 @@ func getRemoteAnalogData(context *gin.Context) {
 	topic := fmt.Sprintf("topic/%s", name)
 	token := client.Subscribe(topic, 0, analogRemoteDataHandler)
 	token.Wait()
+	log.Printf("MQTT TOKEN: Topic:%s Message:%s\n", topic, name)
 	/*if err != nil {
 		context.IndentedJSON(http.StatusNotFound, gin.H{"message": "remote part does not exist"})
 		fmt.Println(err)
@@ -250,7 +251,7 @@ func main() {
 	options := mqtt.NewClientOptions()
 	broker := GetOutboundIP().String()
 	port := 1883
-	options.AddBroker(fmt.Sprintf("tcp://%s:%d", broker, port))
+	options.AddBroker(fmt.Sprintf("%s:%d", broker, port))
 	log.Printf("Connected to: tcp://%s:%d\n", broker, port)
 	options.SetClientID("raspberry_pi")
 	options.SetUsername("pi")
