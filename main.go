@@ -202,6 +202,7 @@ func getRemoteAnalogData(context *gin.Context) {
 	var receivedMsg string
 	var analogRemoteDataHandler = func(client mqtt.Client, msg mqtt.Message) {
 		receivedMsg = fmt.Sprintf("%s", msg.Payload())
+		log.Println(msg.Payload())
 	}
 	name := context.Param("part")
 	topic := fmt.Sprintf("topic/%s", name)
