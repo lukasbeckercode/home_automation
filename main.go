@@ -189,6 +189,7 @@ func toggleRemotePart(context *gin.Context) {
 	topic := fmt.Sprintf("topic/%s", name)
 	token := client.Publish(topic, 0, false, message)
 	token.Wait()
+	log.Println("MQTT TOKEN: Topic:{} Message:{}", topic, message)
 	context.IndentedJSON(http.StatusOK, sampleRemoteBinPart)
 }
 
@@ -250,6 +251,7 @@ func main() {
 	broker := GetOutboundIP().String()
 	port := 1883
 	options.AddBroker(fmt.Sprintf("tcp://%s:%d", broker, port))
+	log.Println("Connected to: tcp://{}:{}", broker, port)
 	options.SetClientID("raspberry_pi")
 	options.SetUsername("pi")
 	options.SetPassword("raspberry")
