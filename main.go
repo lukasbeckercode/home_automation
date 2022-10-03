@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"github.com/gorilla/websocket"
 	"github.com/stianeikeland/go-rpio"
 	"io/ioutil"
 	"log"
@@ -14,6 +15,9 @@ import (
 
 var feeds []*Feed
 var client *Client
+var ws *websocket.Conn
+
+var wsConnected = false
 
 type part struct {
 	Id   int    `json:"id"`
@@ -59,6 +63,13 @@ var sampleRemoteAnalogPart = remoteAnalogPart{
 	part{5, "TEMP5", 9999}, "0",
 }
 
+func wsReader() {
+	err := ws.WriteJSON(binParts)
+	if err != nil {
+		panic(err)
+	}
+
+}
 func toggleInternalLed(pinNum int) {
 	pin := rpio.Pin(pinNum)
 	pin.Output()
@@ -130,8 +141,12 @@ func toggleOn(context *gin.Context) {
 		return
 	}
 	command.On = !command.On
-	toggleInternalLed(command.Pin)
+	//toggleInternalLed(command.Pin)
 	context.IndentedJSON(http.StatusOK, command)
+
+	if wsConnected {
+		wsReader()
+	}
 }
 
 func addBinPart(context *gin.Context) {
@@ -224,6 +239,24 @@ func findMQTTChannel(part string) (int, error) {
 	return 9999, errors.New("cannot find feed")
 }
 
+func wsAnalog(context *gin.Context) {
+	var upgrader = websocket.Upgrader{
+		ReadBufferSize:  1024,
+		WriteBufferSize: 1024,
+	}
+	upgrader.CheckOrigin = func(r *http.Request) bool {
+		return true
+	}
+	var err error
+	ws, err = upgrader.Upgrade(context.Writer, context.Request, nil)
+	if err != nil {
+		panic(err)
+	}
+	wsReader()
+	wsConnected = true
+
+}
+
 func main() {
 	var channelKey string
 	getChannelKey(&channelKey)
@@ -258,12 +291,15 @@ func main() {
 	//----------REMOTE PARTS----------
 	router.PATCH("/binparts/remote/:part", toggleRemotePart) // changes the On status of a specific binary part
 	router.GET("/analogparts/remote/:part", getRemoteAnalogData)
+	//Websocket
+	router.GET("/values", wsAnalog)
 
 	//----------RUN----------
-	path := GetOutboundIP().String() + ":9090"
-	//err := router.Run("localhost:9090")
-	err = router.Run(path)
+	//path := GetOutboundIP().String() + ":9090"
+	err = router.Run("localhost:9090")
+	//err = router.Run(path)
 	if err != nil {
 		return
 	}
+
 }
