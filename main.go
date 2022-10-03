@@ -3,18 +3,27 @@ package main
 import (
 	"errors"
 	"fmt"
+	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 	"github.com/stianeikeland/go-rpio"
-	"io/ioutil"
 	"log"
 	"net"
 	"net/http"
-	"strings"
 )
 
-var feeds []*Feed
-var client *Client
+var client mqtt.Client
+var messagePubHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Message) {
+	fmt.Printf("Received message: %s from topic: %s\n", msg.Payload(), msg.Topic())
+}
+
+var connectHandler mqtt.OnConnectHandler = func(client mqtt.Client) {
+	fmt.Println("Connected")
+}
+
+var connectLostHandler mqtt.ConnectionLostHandler = func(client mqtt.Client, err error) {
+	fmt.Printf("Connect lost: %v", err)
+}
 var ws *websocket.Conn
 
 var wsConnected = false
@@ -163,13 +172,10 @@ func addBinPart(context *gin.Context) {
 
 func toggleRemotePart(context *gin.Context) {
 	name := context.Param("part")
-	idx, err := findMQTTChannel(name)
-	if err != nil {
+	/*if err != nil {
 		context.IndentedJSON(http.StatusNotFound, gin.H{"message": "remote part does not exist"})
 		fmt.Println(err)
-	}
-
-	client.SetFeed(feeds[idx])
+	}*/
 
 	sampleRemoteBinPart.On = !sampleRemoteBinPart.On
 
@@ -180,25 +186,26 @@ func toggleRemotePart(context *gin.Context) {
 		message = "FALSE"
 	}
 
-	_, _, err = client.Data.Send(&Data{Value: message})
-	if err != nil {
-		return
-	}
-
+	topic := fmt.Sprintf("topic/%s", name)
+	token := client.Publish(topic, 0, false, message)
+	token.Wait()
 	context.IndentedJSON(http.StatusOK, sampleRemoteBinPart)
 }
 
 func getRemoteAnalogData(context *gin.Context) {
+	var receivedMsg string
+	var analogRemoteDataHandler = func(client mqtt.Client, msg mqtt.Message) {
+		receivedMsg = fmt.Sprintf("%s", msg.Payload())
+	}
 	name := context.Param("part")
-	idx, err := findMQTTChannel(name)
-
-	if err != nil {
+	topic := fmt.Sprintf("topic/%s", name)
+	token := client.Subscribe(topic, 0, analogRemoteDataHandler)
+	token.Wait()
+	/*if err != nil {
 		context.IndentedJSON(http.StatusNotFound, gin.H{"message": "remote part does not exist"})
 		fmt.Println(err)
-	}
-	client.SetFeed(feeds[idx])
-	data, _, _ := client.Data.Last()
-	sampleRemoteAnalogPart.Value = data.Value
+	}*/
+	sampleRemoteAnalogPart.Value = receivedMsg
 	context.IndentedJSON(http.StatusOK, sampleRemoteAnalogPart)
 }
 
@@ -220,25 +227,6 @@ func GetOutboundIP() net.IP {
 	return localAddr.IP
 }
 
-func getChannelKey(key *string) {
-	file, err := ioutil.ReadFile("generated_key.txt")
-
-	if err != nil {
-		panic(err)
-	}
-	tmpKey := string(file)
-	*key = strings.Trim(tmpKey, "\n")
-}
-
-func findMQTTChannel(part string) (int, error) {
-	for index, feed := range feeds {
-		if feed.Name == part {
-			return index, nil
-		}
-	}
-	return 9999, errors.New("cannot find feed")
-}
-
 func wsAnalog(context *gin.Context) {
 	var upgrader = websocket.Upgrader{
 		ReadBufferSize:  1024,
@@ -258,21 +246,22 @@ func wsAnalog(context *gin.Context) {
 }
 
 func main() {
-	var channelKey string
-	getChannelKey(&channelKey)
-
-	//TODO: add mqtt setup
-	client = NewClient(channelKey)
-	var err error
-	feeds, _, err = client.Feed.All()
-	if err != nil {
-		panic(err)
-	}
+	options := mqtt.NewClientOptions()
+	broker := GetOutboundIP().String()
+	port := 1883
+	options.AddBroker(fmt.Sprintf("tcp://%s:%d", broker, port))
+	options.SetClientID("raspberry_pi")
+	options.SetUsername("pi")
+	options.SetPassword("raspberry")
+	options.SetDefaultPublishHandler(messagePubHandler)
+	options.OnConnect = connectHandler
+	options.OnConnectionLost = connectLostHandler
+	client = mqtt.NewClient(options)
 
 	//----------SETUP----------
 	router := gin.Default()
 
-	err = rpio.Open()
+	err := rpio.Open()
 	if err != nil {
 		fmt.Println(err)
 	}

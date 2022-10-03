@@ -3,6 +3,7 @@ module home_automation
 go 1.16
 
 require (
+	github.com/eclipse/paho.mqtt.golang v1.4.1 // indirect
 	github.com/gin-gonic/gin v1.8.1
 	github.com/google/go-querystring v1.1.0
 	github.com/gorilla/websocket v1.5.0
