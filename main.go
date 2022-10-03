@@ -188,7 +188,9 @@ func toggleRemotePart(context *gin.Context) {
 
 	topic := fmt.Sprintf("topic/%s", name)
 	token := client.Publish(topic, 0, false, message)
-	token.Wait()
+	for !token.Wait() {
+
+	}
 	log.Printf("MQTT TOKEN: Topic:%s Message:%s\n", topic, message)
 	context.IndentedJSON(http.StatusOK, sampleRemoteBinPart)
 }
