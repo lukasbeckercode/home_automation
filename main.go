@@ -214,7 +214,9 @@ func getRemoteAnalogData(context *gin.Context) {
 	name := context.Param("part")
 	topic := fmt.Sprintf("topic/%s", name)
 	token := client.Subscribe(topic, 0, analogRemoteDataHandler)
-	token.Wait()
+	for !token.Wait() {
+
+	}
 	if token.Error() != nil {
 		panic(token.Error())
 	}
