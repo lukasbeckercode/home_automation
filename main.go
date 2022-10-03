@@ -220,6 +220,7 @@ func getRemoteAnalogData(context *gin.Context) {
 	if token.Error() != nil {
 		panic(token.Error())
 	}
+	token = client.Unsubscribe(topic)
 	log.Printf("MQTT TOKEN: Topic:%s Message:%s\n", topic, receivedMsg)
 	receivedMsg = ""
 	/*if err != nil {
