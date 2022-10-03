@@ -141,7 +141,7 @@ func toggleOn(context *gin.Context) {
 		return
 	}
 	command.On = !command.On
-	//toggleInternalLed(command.Pin)
+	toggleInternalLed(command.Pin)
 	context.IndentedJSON(http.StatusOK, command)
 
 	if wsConnected {
@@ -295,9 +295,9 @@ func main() {
 	router.GET("/values", wsAnalog)
 
 	//----------RUN----------
-	//path := GetOutboundIP().String() + ":9090"
-	err = router.Run("localhost:9090")
-	//err = router.Run(path)
+	path := GetOutboundIP().String() + ":9090"
+	//err = router.Run("localhost:9090")
+	err = router.Run(path)
 	if err != nil {
 		return
 	}
