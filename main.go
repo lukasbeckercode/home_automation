@@ -268,6 +268,7 @@ func main() {
 	options.OnConnect = connectHandler
 	options.OnConnectionLost = connectLostHandler
 	client = mqtt.NewClient(options)
+	client.Connect()
 
 	//----------SETUP----------
 	router := gin.Default()
