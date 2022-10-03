@@ -202,7 +202,7 @@ func getRemoteAnalogData(context *gin.Context) {
 	topic := fmt.Sprintf("topic/%s", name)
 	token := client.Subscribe(topic, 0, analogRemoteDataHandler)
 	token.Wait()
-	log.Printf("MQTT TOKEN: Topic:%s Message:%s\n", topic, name)
+	log.Printf("MQTT TOKEN: Topic:%s Message:%s\n", topic, receivedMsg)
 	/*if err != nil {
 		context.IndentedJSON(http.StatusNotFound, gin.H{"message": "remote part does not exist"})
 		fmt.Println(err)
