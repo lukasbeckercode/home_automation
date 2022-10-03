@@ -200,15 +200,15 @@ func toggleRemotePart(context *gin.Context) {
 }
 
 func getRemoteAnalogData(context *gin.Context) {
-	var receivedMsg string
+	var receivedMsg *string
 	var analogRemoteDataHandler = func(client mqtt.Client, msg mqtt.Message) {
 		bytes := msg.Payload()
 		for i := 0; i < len(bytes); i++ {
 			num, _ := strconv.ParseInt(string(bytes[i]), 10, 0)
-			receivedMsg = fmt.Sprintf("%s%d", receivedMsg, num)
+			*receivedMsg = fmt.Sprintf("%s%d", *receivedMsg, num)
 		}
 
-		log.Println(receivedMsg)
+		log.Println(&receivedMsg)
 		return
 	}
 	name := context.Param("part")
@@ -221,13 +221,13 @@ func getRemoteAnalogData(context *gin.Context) {
 		panic(token.Error())
 	}
 	token = client.Unsubscribe(topic)
-	log.Printf("MQTT TOKEN: Topic:%s Message:%s\n", topic, receivedMsg)
-	receivedMsg = ""
+	log.Printf("MQTT TOKEN: Topic:%s Message:%s\n", topic, *receivedMsg)
+
 	/*if err != nil {
 		context.IndentedJSON(http.StatusNotFound, gin.H{"message": "remote part does not exist"})
 		fmt.Println(err)
 	}*/
-	sampleRemoteAnalogPart.Value = receivedMsg
+	sampleRemoteAnalogPart.Value = *receivedMsg
 	context.IndentedJSON(http.StatusOK, sampleRemoteAnalogPart)
 }
 
