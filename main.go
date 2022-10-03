@@ -206,6 +206,7 @@ func getRemoteAnalogData(context *gin.Context) {
 		for i := 0; i < len(bytes); i++ {
 			num, _ := strconv.ParseInt(string(bytes[i]), 10, 0)
 			receivedMsg = fmt.Sprintf("%s%d", receivedMsg, num)
+			log.Println(receivedMsg)
 		}
 
 		log.Println(receivedMsg)
