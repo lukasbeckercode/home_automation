@@ -191,6 +191,9 @@ func toggleRemotePart(context *gin.Context) {
 	for !token.Wait() {
 
 	}
+	if token.Error() != nil {
+		panic(token.Error())
+	}
 	log.Printf("MQTT TOKEN: Topic:%s Message:%s\n", topic, message)
 	context.IndentedJSON(http.StatusOK, sampleRemoteBinPart)
 }
@@ -204,6 +207,9 @@ func getRemoteAnalogData(context *gin.Context) {
 	topic := fmt.Sprintf("topic/%s", name)
 	token := client.Subscribe(topic, 0, analogRemoteDataHandler)
 	token.Wait()
+	if token.Error() != nil {
+		panic(token.Error())
+	}
 	log.Printf("MQTT TOKEN: Topic:%s Message:%s\n", topic, receivedMsg)
 	/*if err != nil {
 		context.IndentedJSON(http.StatusNotFound, gin.H{"message": "remote part does not exist"})
