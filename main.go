@@ -199,8 +199,8 @@ func toggleRemotePart(context *gin.Context) {
 	context.IndentedJSON(http.StatusOK, sampleRemoteBinPart)
 }
 
-func getRemoteAnalogData(context *gin.Context) {
-	var receivedMsg string
+func getRemoteAnalogData(context *gin.Context, c chan string) {
+	var receivedMsg = ""
 	var analogRemoteDataHandler = func(client mqtt.Client, msg mqtt.Message) {
 		bytes := msg.Payload()
 		for i := 0; i < len(bytes); i++ {
@@ -209,18 +209,23 @@ func getRemoteAnalogData(context *gin.Context) {
 		}
 
 		log.Println(&receivedMsg)
+		c <- receivedMsg
 		return
 	}
+
 	name := context.Param("part")
 	topic := fmt.Sprintf("topic/%s", name)
 	token := client.Subscribe(topic, 0, analogRemoteDataHandler)
-	token.Done()
 
 	if token.Error() != nil {
 		panic(token.Error())
 	}
-	token = client.Unsubscribe(topic)
-	log.Printf("MQTT TOKEN: Topic:%s Message:%s\n", topic, receivedMsg)
+
+}
+
+func retrieveRemoteAnalogData(c chan string, context *gin.Context) {
+	receivedMsg := <-c
+	log.Printf("MQTT TOKEN:  Message:%s\n", receivedMsg)
 
 	/*if err != nil {
 		context.IndentedJSON(http.StatusNotFound, gin.H{"message": "remote part does not exist"})
@@ -228,6 +233,11 @@ func getRemoteAnalogData(context *gin.Context) {
 	}*/
 	sampleRemoteAnalogPart.Value = receivedMsg
 	context.IndentedJSON(http.StatusOK, sampleRemoteAnalogPart)
+}
+func handleRemoteAnalogData(context *gin.Context) {
+	c := make(chan string)
+	getRemoteAnalogData(context, c)
+	retrieveRemoteAnalogData(c, context)
 }
 
 // GetOutboundIP Get preferred outbound ip of this machine
@@ -302,7 +312,7 @@ func main() {
 
 	//----------REMOTE PARTS----------
 	router.PATCH("/binparts/remote/:part", toggleRemotePart) // changes the On status of a specific binary part
-	router.GET("/analogparts/remote/:part", getRemoteAnalogData)
+	router.GET("/analogparts/remote/:part", handleRemoteAnalogData)
 	//Websocket
 	router.GET("/values", wsAnalog)
 
