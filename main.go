@@ -209,6 +209,7 @@ func getRemoteAnalogData(context *gin.Context) {
 		}
 
 		log.Println(receivedMsg)
+		return
 	}
 	name := context.Param("part")
 	topic := fmt.Sprintf("topic/%s", name)
