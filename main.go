@@ -463,7 +463,7 @@ func main() {
 	router.DELETE("/analogparts/remote/:part", removeRemoteAnalogPart)
 
 	//----------WEBSOCKET----------
-	router.GET("/values", handleRemoteAnalogData)
+	router.GET("/values/:part", handleRemoteAnalogData)
 
 	//----------RUN----------
 	path := GetOutboundIP().String() + ":9090"
