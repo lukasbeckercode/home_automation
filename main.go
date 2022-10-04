@@ -233,12 +233,13 @@ func retrieveRemoteAnalogData(c chan string, context *gin.Context) {
 	}*/
 	sampleRemoteAnalogPart.Value = receivedMsg
 	context.IndentedJSON(http.StatusOK, sampleRemoteAnalogPart)
+	close(c)
 }
 func handleRemoteAnalogData(context *gin.Context) {
 	c := make(chan string)
 	getRemoteAnalogData(context, c)
 	retrieveRemoteAnalogData(c, context)
-	close(c)
+
 }
 
 // GetOutboundIP Get preferred outbound ip of this machine
