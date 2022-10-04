@@ -201,9 +201,9 @@ func toggleRemotePart(context *gin.Context) {
 }
 
 func getRemoteAnalogData(context *gin.Context, c chan string) {
-	var receivedMsg = ""
 
 	var analogRemoteDataHandler = func(client mqtt.Client, msg mqtt.Message) {
+		var receivedMsg = ""
 		bytes := msg.Payload()
 		for i := 0; i < len(bytes); i++ {
 			num, _ := strconv.ParseInt(string(bytes[i]), 10, 0)
@@ -215,6 +215,7 @@ func getRemoteAnalogData(context *gin.Context, c chan string) {
 		c <- receivedMsg
 
 		time.Sleep(5 * time.Second)
+		close(c)
 		return
 	}
 
@@ -225,7 +226,7 @@ func getRemoteAnalogData(context *gin.Context, c chan string) {
 	if token.Error() != nil {
 		panic(token.Error())
 	}
-
+	token.Wait()
 }
 
 func retrieveRemoteAnalogData(c chan string, context *gin.Context) {
