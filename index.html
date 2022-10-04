@@ -2,14 +2,14 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <title>Awesome Home Automation</title>
 </head>
 <body>
 <div id="parts">
 
 </div>
 <script>
-    let socket = new WebSocket("ws://192.168.68.120:9090/values")
+    let socket = new WebSocket("ws://172.20.10.4:9090/values/TEMP5")
     socket.onopen = () => {
         console.log("Successfully Connected")
     }
@@ -18,10 +18,8 @@
         let json = msg.data
         let res = JSON.parse(json)
         let html = ""
-        for(let i = 0; i<res.length;i++){
-            console.log(res[i].on)
-            html += res[i].part +": "+ res[i].on +"<br />"
-        }
+            console.log(res.value)
+            html += res.part +": "+ res.value +"<br />"
         document.getElementById('parts').innerHTML = html
     }
 </script>
