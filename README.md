@@ -69,8 +69,6 @@ The only downside of this development board is, that is has to be programmed in 
 Arduino community provides a lot of libraries so very little C experience is required. 
 
 ## Known Issues and Limitations 
-- Not all the CRUD commands are implemented for all the functionality. This is because they were not 
-needed to showcase the technologies used here
 - None of this was tested in an actual home automation environment. I am not an electrician, so I
 refuse to work with main power voltage for safety reasons
 - Analog sensor reading was not implemented on the raspberry from the hardware point of view. The reason for this being,

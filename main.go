@@ -70,12 +70,20 @@ var sampleRemoteBinPart = remoteBinPart{
 	part{4, "LED5", 9999}, false,
 }
 
+var remoteBinParts = []remoteBinPart{
+	sampleRemoteBinPart,
+}
+
 var sampleRemoteAnalogPart = remoteAnalogPart{
 	part{5, "TEMP5", 9999}, "0",
 }
 
+var remoteAnalogParts = []remoteAnalogPart{
+	sampleRemoteAnalogPart,
+}
+
 func wsReader() {
-	err := ws.WriteJSON(binParts)
+	err := ws.WriteJSON(sampleRemoteAnalogPart)
 	if err != nil {
 		panic(err)
 	}
@@ -95,6 +103,15 @@ func getAnalogPartByName(name string) (*analogPart, error) {
 	for i, t := range analogParts {
 		if t.Part == name {
 			return &analogParts[i], nil
+		}
+	}
+	return nil, errors.New("part not found")
+}
+
+func getRemoteAnalogPartByName(name string) (*remoteAnalogPart, error) {
+	for i, t := range remoteAnalogParts {
+		if t.Part == name {
+			return &remoteAnalogParts[i], nil
 		}
 	}
 	return nil, errors.New("part not found")
@@ -134,6 +151,15 @@ func getBinPartByName(name string) (*binPart, error) {
 	return nil, errors.New("part not found")
 }
 
+func getRemoteBinPartByName(name string) (*remoteBinPart, error) {
+	for i, t := range remoteBinParts {
+		if t.Part == name {
+			return &remoteBinParts[i], nil
+		}
+	}
+	return nil, errors.New("part not found")
+}
+
 func getBinPart(context *gin.Context) {
 	name := context.Param("part")
 	command, err := getBinPartByName(name)
@@ -154,10 +180,6 @@ func toggleOn(context *gin.Context) {
 	command.On = !command.On
 	toggleInternalLed(command.Pin)
 	context.IndentedJSON(http.StatusOK, command)
-
-	if wsConnected {
-		wsReader()
-	}
 }
 
 func addBinPart(context *gin.Context) {
@@ -172,6 +194,67 @@ func addBinPart(context *gin.Context) {
 
 }
 
+func removeBinPart(context *gin.Context) {
+	part, _ := getBinPartByName(context.Param("name"))
+	for i, parts := range binParts {
+		if parts.Id == part.Id {
+			binParts = append(binParts[:i], binParts[i+1:]...)
+			context.IndentedJSON(http.StatusOK, binParts)
+			return
+		}
+	}
+	context.IndentedJSON(http.StatusNotFound, gin.H{"message": "part not found"})
+}
+
+func removeAnalogPart(context *gin.Context) {
+	part, _ := getAnalogPartByName(context.Param("name"))
+	for i, parts := range analogParts {
+		if parts.Id == part.Id {
+			analogParts = append(analogParts[:i], analogParts[i+1:]...)
+			context.IndentedJSON(http.StatusOK, analogParts)
+			return
+		}
+	}
+	context.IndentedJSON(http.StatusNotFound, gin.H{"message": "part not found"})
+}
+
+func addRemoteBinPart(context *gin.Context) {
+	var newPart remoteBinPart
+	err := context.BindJSON(&newPart)
+	if err != nil {
+		//TODO: error handling
+		return
+	}
+	remoteBinParts = append(remoteBinParts, newPart)
+	context.IndentedJSON(http.StatusCreated, newPart)
+}
+
+func getRemoteBinPart(context *gin.Context) {
+	name := context.Param("part")
+	command, err := getRemoteBinPartByName(name)
+	if err != nil {
+		context.IndentedJSON(http.StatusNotFound, gin.H{"message": "part not found"})
+		return
+	}
+	context.IndentedJSON(http.StatusOK, command)
+}
+
+func getRemoteBinParts(context *gin.Context) {
+	context.IndentedJSON(http.StatusOK, remoteBinParts)
+
+}
+
+func removeRemoteBinPart(context *gin.Context) {
+	part, _ := getRemoteBinPartByName(context.Param("name"))
+	for i, parts := range remoteBinParts {
+		if parts.Id == part.Id {
+			remoteBinParts = append(remoteBinParts[:i], remoteBinParts[i+1:]...)
+			context.IndentedJSON(http.StatusOK, remoteBinParts)
+			return
+		}
+	}
+	context.IndentedJSON(http.StatusNotFound, gin.H{"message": "part not found"})
+}
 func toggleRemotePart(context *gin.Context) {
 	name := context.Param("part")
 	/*if err != nil {
@@ -199,6 +282,42 @@ func toggleRemotePart(context *gin.Context) {
 	log.Printf("MQTT TOKEN: Topic:%s Message:%s\n", topic, message)
 	context.IndentedJSON(http.StatusOK, sampleRemoteBinPart)
 }
+func getRemoteAnalogParts(context *gin.Context) {
+	context.IndentedJSON(http.StatusOK, remoteAnalogParts)
+}
+
+func addRemoteAnalogPart(context *gin.Context) {
+	var newPart remoteAnalogPart
+	err := context.BindJSON(&newPart)
+	if err != nil {
+		//TODO: error handling
+		return
+	}
+	remoteAnalogParts = append(remoteAnalogParts, newPart)
+	context.IndentedJSON(http.StatusCreated, newPart)
+}
+
+func getRemoteAnalogPart(context *gin.Context) {
+	name := context.Param("part")
+	command, err := getRemoteAnalogPartByName(name)
+	if err != nil {
+		context.IndentedJSON(http.StatusNotFound, gin.H{"message": "part not found"})
+		return
+	}
+	context.IndentedJSON(http.StatusOK, command)
+}
+
+func removeRemoteAnalogPart(context *gin.Context) {
+	part, _ := getRemoteAnalogPartByName(context.Param("name"))
+	for i, parts := range remoteAnalogParts {
+		if parts.Id == part.Id {
+			remoteAnalogParts = append(remoteAnalogParts[:i], remoteAnalogParts[i+1:]...)
+			context.IndentedJSON(http.StatusOK, remoteAnalogParts)
+			return
+		}
+	}
+	context.IndentedJSON(http.StatusNotFound, gin.H{"message": "part not found"})
+}
 
 func getRemoteAnalogData(context *gin.Context, c chan string) {
 
@@ -215,7 +334,7 @@ func getRemoteAnalogData(context *gin.Context, c chan string) {
 		c <- receivedMsg
 
 		time.Sleep(1 * time.Second)
-		close(c)
+
 		return
 	}
 
@@ -313,20 +432,33 @@ func main() {
 	}
 
 	//----------BINARY PARTS----------
-	router.GET("/binparts", getBinParts)      // gets available binary binParts
-	router.GET("/binparts/:part", getBinPart) // gets a specific binary part
-	router.PATCH("/binparts/:part", toggleOn) // changes the On status of a specific binary part
-	router.POST("/addbinpart", addBinPart)    // adds a binary part
+	router.GET("/binparts", getBinParts)            // gets available binary binParts
+	router.GET("/binparts/:part", getBinPart)       // gets a specific binary part
+	router.PATCH("/binparts/:part", toggleOn)       // changes the On status of a specific binary part
+	router.POST("/addbinpart", addBinPart)          // adds a binary part
+	router.DELETE("/binparts/:part", removeBinPart) //removes bin part
 
 	//----------ANALOG PARTS----------
 	router.GET("/analogparts", getAnalogParts)
 	router.GET("/analogparts/:part", getAnalogPart)
 	router.POST("/addanalogpart", addAnalogPart)
+	router.DELETE("/analogparts/:part", removeAnalogPart)
+	//UPDATE is implemented in the mqtt side of this project
 
-	//----------REMOTE PARTS----------
+	//----------REMOTE BIN PARTS----------
+	router.GET("/binparts/remote/", getRemoteBinParts)
+	router.GET("/binparts/remote/:part", getRemoteBinPart)
+	router.POST("addbinpart/remote", addRemoteBinPart)
 	router.PATCH("/binparts/remote/:part", toggleRemotePart) // changes the On status of a specific binary part
+	router.DELETE("/binparts/remote/:part", removeRemoteBinPart)
+
+	//----------REMOTE ANALOG PARTS----------
+	router.GET("/analogparts/remote/", getRemoteAnalogParts)
 	router.GET("/analogparts/remote/:part", handleRemoteAnalogData)
-	//Websocket
+	router.POST("/analogparts/remote/addpart/", addRemoteAnalogPart)
+	router.DELETE("/analogparts/remote/:part", removeRemoteAnalogPart)
+
+	//----------WEBSOCKET----------
 	router.GET("/values", wsAnalog)
 
 	//----------RUN----------
