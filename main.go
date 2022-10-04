@@ -89,6 +89,24 @@ func wsReader() {
 	}
 
 }
+
+func wsAnalog(context *gin.Context) {
+	var upgrader = websocket.Upgrader{
+		ReadBufferSize:  1024,
+		WriteBufferSize: 1024,
+	}
+	upgrader.CheckOrigin = func(r *http.Request) bool {
+		return true
+	}
+	var err error
+	ws, err = upgrader.Upgrade(context.Writer, context.Request, nil)
+	if err != nil {
+		panic(err)
+	}
+	wsReader()
+	wsConnected = true
+
+}
 func toggleInternalLed(pinNum int) {
 	pin := rpio.Pin(pinNum)
 	pin.Output()
@@ -369,6 +387,7 @@ func retrieveRemoteAnalogData(c chan string, context *gin.Context) {
 	context.IndentedJSON(http.StatusOK, sampleRemoteAnalogPart)
 }
 func handleRemoteAnalogData(context *gin.Context) {
+	wsAnalog(context)
 	c := make(chan string)
 	go getRemoteAnalogData(context, c)
 	go retrieveRemoteAnalogData(c, context)
@@ -391,24 +410,6 @@ func GetOutboundIP() net.IP {
 	localAddr := conn.LocalAddr().(*net.UDPAddr)
 
 	return localAddr.IP
-}
-
-func wsAnalog(context *gin.Context) {
-	var upgrader = websocket.Upgrader{
-		ReadBufferSize:  1024,
-		WriteBufferSize: 1024,
-	}
-	upgrader.CheckOrigin = func(r *http.Request) bool {
-		return true
-	}
-	var err error
-	ws, err = upgrader.Upgrade(context.Writer, context.Request, nil)
-	if err != nil {
-		panic(err)
-	}
-	wsReader()
-	wsConnected = true
-
 }
 
 func main() {
@@ -462,7 +463,7 @@ func main() {
 	router.DELETE("/analogparts/remote/:part", removeRemoteAnalogPart)
 
 	//----------WEBSOCKET----------
-	router.GET("/values", wsAnalog)
+	router.GET("/values", handleRemoteAnalogData)
 
 	//----------RUN----------
 	path := GetOutboundIP().String() + ":9090"
