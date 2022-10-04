@@ -214,7 +214,7 @@ func getRemoteAnalogData(context *gin.Context, c chan string) {
 
 		c <- receivedMsg
 
-		time.Sleep(5 * time.Second)
+		time.Sleep(1 * time.Second)
 		close(c)
 		return
 	}
