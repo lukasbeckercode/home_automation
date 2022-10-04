@@ -351,16 +351,6 @@ func addRemoteAnalogPart(context *gin.Context) {
 	context.IndentedJSON(http.StatusCreated, newPart)
 }
 
-func getRemoteAnalogPart(context *gin.Context) {
-	name := context.Param("part")
-	command, err := getRemoteAnalogPartByName(name)
-	if err != nil {
-		context.IndentedJSON(http.StatusNotFound, gin.H{"message": "part not found"})
-		return
-	}
-	context.IndentedJSON(http.StatusOK, command)
-}
-
 func removeRemoteAnalogPart(context *gin.Context) {
 	part, err := getRemoteAnalogPartByName(context.Param("name"))
 	if err != nil {
