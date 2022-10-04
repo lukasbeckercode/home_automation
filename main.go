@@ -213,27 +213,51 @@ func addBinPart(context *gin.Context) {
 }
 
 func removeBinPart(context *gin.Context) {
-	part, _ := getBinPartByName(context.Param("name"))
+	part, err := getBinPartByName(context.Param("name"))
+	if err != nil {
+		return
+	}
+	var idx int
+	found := false
 	for i, parts := range binParts {
 		if parts.Id == part.Id {
-			binParts = append(binParts[:i], binParts[i+1:]...)
-			context.IndentedJSON(http.StatusOK, binParts)
-			return
+			idx = i
+			found = true
+			break
+		} else {
+			continue
 		}
 	}
-	context.IndentedJSON(http.StatusNotFound, gin.H{"message": "part not found"})
+	if found {
+		binParts = append(binParts[:idx], binParts[idx+1:]...)
+		context.IndentedJSON(http.StatusOK, binParts)
+	} else {
+		context.IndentedJSON(http.StatusNotFound, gin.H{"message": "part not found"})
+	}
 }
 
 func removeAnalogPart(context *gin.Context) {
-	part, _ := getAnalogPartByName(context.Param("name"))
+	part, err := getAnalogPartByName(context.Param("name"))
+	if err != nil {
+		return
+	}
+	var idx int
+	found := false
 	for i, parts := range analogParts {
 		if parts.Id == part.Id {
-			analogParts = append(analogParts[:i], analogParts[i+1:]...)
-			context.IndentedJSON(http.StatusOK, analogParts)
-			return
+			idx = i
+			found = true
+			break
+		} else {
+			continue
 		}
 	}
-	context.IndentedJSON(http.StatusNotFound, gin.H{"message": "part not found"})
+	if found {
+		analogParts = append(analogParts[:idx], analogParts[idx+1:]...)
+		context.IndentedJSON(http.StatusOK, analogParts)
+	} else {
+		context.IndentedJSON(http.StatusNotFound, gin.H{"message": "part not found"})
+	}
 }
 
 func addRemoteBinPart(context *gin.Context) {
@@ -263,15 +287,27 @@ func getRemoteBinParts(context *gin.Context) {
 }
 
 func removeRemoteBinPart(context *gin.Context) {
-	part, _ := getRemoteBinPartByName(context.Param("name"))
-	for i, parts := range remoteBinParts {
+	part, err := getRemoteBinPartByName(context.Param("name"))
+	if err != nil {
+		return
+	}
+	var idx int
+	found := false
+	for i, parts := range remoteAnalogParts {
 		if parts.Id == part.Id {
-			remoteBinParts = append(remoteBinParts[:i], remoteBinParts[i+1:]...)
-			context.IndentedJSON(http.StatusOK, remoteBinParts)
-			return
+			idx = i
+			found = true
+			break
+		} else {
+			continue
 		}
 	}
-	context.IndentedJSON(http.StatusNotFound, gin.H{"message": "part not found"})
+	if found {
+		remoteAnalogParts = append(remoteAnalogParts[:idx], remoteAnalogParts[idx+1:]...)
+		context.IndentedJSON(http.StatusOK, remoteAnalogParts)
+	} else {
+		context.IndentedJSON(http.StatusNotFound, gin.H{"message": "part not found"})
+	}
 }
 func toggleRemotePart(context *gin.Context) {
 	name := context.Param("part")
@@ -326,15 +362,27 @@ func getRemoteAnalogPart(context *gin.Context) {
 }
 
 func removeRemoteAnalogPart(context *gin.Context) {
-	part, _ := getRemoteAnalogPartByName(context.Param("name"))
+	part, err := getRemoteAnalogPartByName(context.Param("name"))
+	if err != nil {
+		return
+	}
+	var idx int
+	found := false
 	for i, parts := range remoteAnalogParts {
 		if parts.Id == part.Id {
-			remoteAnalogParts = append(remoteAnalogParts[:i], remoteAnalogParts[i+1:]...)
-			context.IndentedJSON(http.StatusOK, remoteAnalogParts)
-			return
+			idx = i
+			found = true
+			break
+		} else {
+			continue
 		}
 	}
-	context.IndentedJSON(http.StatusNotFound, gin.H{"message": "part not found"})
+	if found {
+		remoteAnalogParts = append(remoteAnalogParts[:idx], remoteAnalogParts[idx+1:]...)
+		context.IndentedJSON(http.StatusOK, remoteAnalogParts)
+	} else {
+		context.IndentedJSON(http.StatusNotFound, gin.H{"message": "part not found"})
+	}
 }
 
 func getRemoteAnalogData(context *gin.Context, c chan string) {
