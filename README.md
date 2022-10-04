@@ -50,12 +50,22 @@ the REST API is used to communicate with end user devices (such as a phone). Mes
 of MQTT is used to establish communication between the Raspberry Pi and the ESP8266. Combining those 
 technologies creates the opportunity to create powerful systems with very low cost. 
 
-### Adafruit IO and MQTT 
-In this project, adafruit io is used as the message broker for MQTT. During the development, 
+### Adafruit IO and MQTT: Replaced with Mosquitto!  
+~~In this project, adafruit io is used as the message broker for MQTT. During the development, 
 I tried writing my own MQ Broker, but I quickly found myself in integration hell, where all 
 the individual parts where working, but combining them was impossible. The easiest fix was
 to create a free adafruit io account and use this. MQTT was used instead of "regular MQ" as it is 
-the gold standard for working with IOT devices 
+the gold standard for working with IOT devices~~
+
+A Mosquitto MQTT Broker runs on the Raspberry Pi. The Go webserver subscribes to topics named after the remote parts
+in the schema of "topic/partName". It also publishes data to toggle a remote LED on and off.
+The ESP8266 subscribes to the topic used for toggling the LED and publishes sensor data to the broker, which is then
+routed through the Go Server to a WebSocket. 
+
+### Websocket
+A WebSocket is introduced to constantly display sensor values coming from the remote part. 
+A very simple index.html file was added, which displays the websocket data using a small javascript script.
+The sensor data is displayed in real time and refreshes _without_ the need to reload the page.
 
 ### Hardware: Raspberry Pi and ESP8266
 A raspberry pi is a small and cheap single board computer. It can be used for a variety of projects. 
@@ -74,5 +84,6 @@ refuse to work with main power voltage for safety reasons
 - Analog sensor reading was not implemented on the raspberry from the hardware point of view. The reason for this being,
 that this has the potential to destroy the Pi if done incorrectly which had caused significant delays in development 
 - Setting everything up can be tedious. The ESP8266 has to be newly flashed every time the Wifi changes in some way
-Also, finding the Pi in a network you aren't the administrator of can cause problems. 
+Also, finding the Pi in a network you aren't the administrator of can cause problems.
+- Using Mosquitto introduced a new issue: The raspberry pi's IP address needs to be changed in the esp8266 firmware as the pi changes IP periodically
 
