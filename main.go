@@ -352,6 +352,9 @@ func retrieveRemoteAnalogData(c chan string, context *gin.Context) {
 	for {
 		receivedMsg, ok := <-c
 		sampleRemoteAnalogPart.Value = receivedMsg
+		if wsConnected {
+			wsReader()
+		}
 		log.Printf("MQTT TOKEN:  Message:%s\n", receivedMsg)
 
 		if ok == false {
