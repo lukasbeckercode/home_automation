@@ -11,6 +11,7 @@ import (
 	"net"
 	"net/http"
 	"strconv"
+	"time"
 )
 
 var client mqtt.Client
@@ -210,6 +211,7 @@ func getRemoteAnalogData(context *gin.Context, c chan string) {
 
 		log.Println(&receivedMsg)
 		c <- receivedMsg
+		time.Sleep(5 * time.Second)
 		return
 	}
 
