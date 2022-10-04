@@ -229,21 +229,26 @@ func getRemoteAnalogData(context *gin.Context, c chan string) {
 }
 
 func retrieveRemoteAnalogData(c chan string, context *gin.Context) {
-	receivedMsg := <-c
-	log.Printf("MQTT TOKEN:  Message:%s\n", receivedMsg)
+	for {
+		receivedMsg, ok := <-c
+		sampleRemoteAnalogPart.Value = receivedMsg
+		log.Printf("MQTT TOKEN:  Message:%s\n", receivedMsg)
+
+		if ok == false {
+			break
+		}
+	}
 
 	/*if err != nil {
 		context.IndentedJSON(http.StatusNotFound, gin.H{"message": "remote part does not exist"})
 		fmt.Println(err)
 	}*/
-	sampleRemoteAnalogPart.Value = receivedMsg
 	context.IndentedJSON(http.StatusOK, sampleRemoteAnalogPart)
-	close(c)
 }
 func handleRemoteAnalogData(context *gin.Context) {
 	c := make(chan string)
 	go getRemoteAnalogData(context, c)
-	retrieveRemoteAnalogData(c, context)
+	go retrieveRemoteAnalogData(c, context)
 
 }
 
